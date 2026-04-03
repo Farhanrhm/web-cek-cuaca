@@ -17,7 +17,7 @@ Cek cuaca di kotamu adalah aplikasi web progresif yang menyajikan data cuaca rea
 -Lucide Icons / Heroicons: Untuk representasi visual yang bersih.
 
 🚀 Cara Menjalankan Project:
-Clone repository: git clone https://github.com/username/weather-app.git
+Clone repository: git clone https://github.com/Farhanrhm/web-cek-cuaca.git
 
 Install dependencies: npm install
 
