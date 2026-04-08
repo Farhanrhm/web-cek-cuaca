@@ -6,70 +6,130 @@ interface WeatherBackgroundProps {
 }
 
 const WeatherBackground = ({ condition, isNight }: WeatherBackgroundProps) => {
-  const particles = useMemo(() => {
-    return Array.from({ length: 50 }).map((_, i) => ({
+  const particles = useMemo(() =>
+    Array.from({ length: 60 }).map((_, i) => ({
       id: i,
-      left: `${Math.random() * 100}vw`, 
-      animationDelay: `${Math.random() * 2}s`, 
-      animationDuration: `${Math.random() * 1 + 0.6}s`, 
-    }));
-  }, [condition]);
+      left: `${Math.random() * 100}vw`,
+      delay: `${(Math.random() * 3).toFixed(2)}s`,
+      duration: `${(Math.random() * 0.8 + 0.5).toFixed(2)}s`,
+    })), [condition]);
 
-  const clouds = useMemo(() => {
-    return Array.from({ length: 5 }).map((_, i) => ({
+  const snowflakes = useMemo(() =>
+    Array.from({ length: 40 }).map((_, i) => ({
       id: i,
-      top: `${Math.random() * 40}vh`, 
-      animationDelay: `${Math.random() * 5}s`,
-      animationDuration: `${Math.random() * 15 + 20}s`,
-      size: `${Math.random() * 100 + 150}px`, 
-    }));
-  }, [condition]);
+      left: `${Math.random() * 100}vw`,
+      delay: `${(Math.random() * 5).toFixed(2)}s`,
+      duration: `${(Math.random() * 3 + 4).toFixed(2)}s`,
+      size: `${Math.floor(Math.random() * 5 + 4)}px`,
+    })), [condition]);
+
+  const clouds = useMemo(() =>
+    Array.from({ length: 6 }).map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 50}vh`,
+      delay: `${(Math.random() * 8).toFixed(2)}s`,
+      duration: `${(Math.random() * 15 + 22).toFixed(2)}s`,
+      width: `${Math.floor(Math.random() * 130 + 120)}px`,
+      opacity: (Math.random() * 0.3 + 0.25).toFixed(2),
+    })), [condition]);
 
   if (!condition) return null;
 
+  const isRainy = ['Rain', 'Drizzle', 'Thunderstorm'].includes(condition);
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      
-      {/* 1. EFEK HUJAN */}
-      {(condition === 'Rain' || condition === 'Drizzle' || condition === 'Thunderstorm') && (
-        particles.map((p) => (
-          <div
-            key={p.id}
-            className="absolute top-[-10vh] w-[2px] h-[25px] bg-blue-100/60 animate-rainfall"
-            style={{ left: p.left, animationDelay: p.animationDelay, animationDuration: p.animationDuration }}
-          />
-        ))
-      )}
 
-      {/* 2. EFEK SALJU */}
-      {condition === 'Snow' && (
-        particles.map((p) => (
-          <div
-            key={p.id}
-            className="absolute top-[-10vh] w-[6px] h-[6px] rounded-full bg-white/80 animate-rainfall"
-            style={{ left: p.left, animationDelay: p.animationDelay, animationDuration: `${parseFloat(p.animationDuration) + 2}s` }} 
-          />
-        ))
-      )}
+      {/* Rain drops */}
+      {isRainy && particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute top-[-10vh] animate-rainfall"
+          style={{
+            left: p.left,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+            width: '1.5px',
+            height: condition === 'Thunderstorm' ? '28px' : '20px',
+            background: condition === 'Thunderstorm'
+              ? 'linear-gradient(to bottom, transparent, rgba(147,197,253,0.5))'
+              : 'linear-gradient(to bottom, transparent, rgba(186,230,253,0.45))',
+            borderRadius: '2px',
+          }}
+        />
+      ))}
 
-      {/* 3. EFEK AWAN BERGERAK */}
-      {condition === 'Clouds' && (
-        clouds.map((c) => (
-          <div
-            key={c.id}
-            className="absolute h-16 bg-white/30 blur-2xl rounded-full animate-clouddrift"
-            style={{ top: c.top, width: c.size, animationDelay: c.animationDelay, animationDuration: c.animationDuration }}
-          />
-        ))
-      )}
+      {/* Snow */}
+      {condition === 'Snow' && snowflakes.map(p => (
+        <div
+          key={p.id}
+          className="absolute top-[-10vh] rounded-full animate-rainfall"
+          style={{
+            left: p.left,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+            width: p.size,
+            height: p.size,
+            background: 'rgba(255,255,255,0.85)',
+            boxShadow: '0 0 4px rgba(255,255,255,0.6)',
+          }}
+        />
+      ))}
 
-      {/* 4. EFEK CERAH (MATAHARI / BULAN) */}
+      {/* Clouds */}
+      {condition === 'Clouds' && clouds.map(c => (
+        <div
+          key={c.id}
+          className="absolute animate-clouddrift blur-3xl rounded-full"
+          style={{
+            top: c.top,
+            width: c.width,
+            height: '56px',
+            animationDelay: c.delay,
+            animationDuration: c.duration,
+            background: isNight ? 'rgba(148,163,184,0.22)' : 'rgba(255,255,255,0.30)',
+            opacity: c.opacity,
+          }}
+        />
+      ))}
+
+      {/* Clear — sun or moon glow */}
       {condition === 'Clear' && (
-        <div 
-          className={`absolute top-20 right-20 w-40 h-40 rounded-full blur-2xl animate-sunpulse ${isNight ? 'bg-indigo-300/30' : 'bg-yellow-200/50'}`}
+        <>
+          <div
+            className="absolute animate-sunpulse rounded-full blur-3xl"
+            style={{
+              top: '8%', right: '8%',
+              width: '180px', height: '180px',
+              background: isNight
+                ? 'radial-gradient(circle, rgba(129,140,248,0.35), transparent)'
+                : 'radial-gradient(circle, rgba(253,224,71,0.5), rgba(251,191,36,0.25), transparent)',
+            }}
+          />
+          {!isNight && (
+            <div
+              className="absolute animate-sunpulse rounded-full blur-2xl"
+              style={{
+                top: '6%', right: '6%',
+                width: '80px', height: '80px',
+                background: 'rgba(253,224,71,0.7)',
+                animationDelay: '1s',
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {/* Thunderstorm flash */}
+      {condition === 'Thunderstorm' && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'rgba(167,139,250,0.04)',
+            animation: 'sunpulse 4s ease-in-out infinite',
+          }}
         />
       )}
-      
     </div>
   );
 };

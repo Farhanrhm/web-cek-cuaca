@@ -2,104 +2,109 @@ interface WeatherDataProps {
   data: {
     name: string;
     timezone: number;
-    main: { 
-      temp: number; 
-      humidity: number; 
-      feels_like: number; 
-    };
+    main: { temp: number; humidity: number; feels_like: number; };
     weather: { description: string; icon: string; }[];
     wind: { speed: number; };
-    sys: { sunset: number; }; 
+    sys: { sunset: number; };
   };
   unit: 'C' | 'F';
+  isSnow?: boolean;
 }
 
-const CurrentWeather = ({ data, unit }: WeatherDataProps) => {
+const CurrentWeather = ({ data, unit, isSnow = false }: WeatherDataProps) => {
   const iconUrl = `https://openweathermap.org/img/wn/${data.weather[0].icon}@4x.png`;
 
-  const displayTemp = unit === 'C' 
-    ? Math.round(data.main.temp) 
-    : Math.round((data.main.temp * 9/5) + 32);
+  const toDisplay = (c: number) => unit === 'C' ? Math.round(c) : Math.round((c * 9 / 5) + 32);
 
-  const feelsLikeTemp = unit === 'C'
-    ? Math.round(data.main.feels_like)
-    : Math.round((data.main.feels_like * 9/5) + 32);
-
-  const getLocalTime = (timezoneOffset: number) => {
-    const currentUtc = new Date().getTime();
-    const localTimeAtCity = currentUtc + (timezoneOffset * 1000);
+  const getLocalTime = (offset: number) => {
+    const local = new Date().getTime() + offset * 1000;
     return new Intl.DateTimeFormat('id-ID', {
-      weekday: 'long',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'UTC' 
-    }).format(new Date(localTimeAtCity));
+      weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+    }).format(new Date(local));
   };
 
-  // --- LOGIKA MENGHITUNG JAM SUNSET LOKAL KOTA TERSEBUT ---
-  const getSunsetTime = (timestamp: number, timezoneOffset: number) => {
-    const sunsetLocalTime = (timestamp + timezoneOffset) * 1000;
-    return new Intl.DateTimeFormat('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'UTC' 
-    }).format(new Date(sunsetLocalTime));
-  };
+  const getSunset = (ts: number, offset: number) =>
+    new Intl.DateTimeFormat('id-ID', {
+      hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+    }).format(new Date((ts + offset) * 1000));
+
+  const text  = isSnow ? 'text-slate-800'     : 'text-white';
+  const muted = isSnow ? 'text-slate-500'      : 'text-white/45';
+  const sub   = isSnow ? 'text-slate-600'      : 'text-white/70';
+  const pillBg = isSnow
+    ? 'bg-slate-100 border-slate-200'
+    : 'bg-white/[0.07] border-white/[0.1]';
+
+  const stats = [
+    { icon: '💧', label: 'Kelembapan',        value: `${data.main.humidity}%` },
+    { icon: '💨', label: 'Angin',             value: `${data.wind.speed} m/s` },
+    { icon: '🌡️', label: 'Terasa Seperti',   value: `${toDisplay(data.main.feels_like)}°${unit}` },
+    { icon: '🌇', label: 'Matahari Terbenam', value: getSunset(data.sys.sunset, data.timezone) },
+  ];
 
   return (
-    <div className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl shadow-lg mb-6 text-center relative overflow-hidden">
-      
-      <h2 className="text-3xl font-bold">{data.name}</h2>
-      
-      <p className="text-blue-100 font-medium mt-1 mb-2 tracking-wide">
-        {getLocalTime(data.timezone)}
-      </p>
-      
-      <div className="flex justify-center">
-        <img src={iconUrl} alt={data.weather[0].description} className="w-32 h-32 drop-shadow-lg" />
+    <div className="mb-2">
+      {/* Hero section */}
+      <div className="text-center mb-6">
+        {/* City + time */}
+        <div className="mb-3">
+          <h2
+            className={`text-2xl font-extrabold tracking-tight ${text}`}
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
+            {data.name}
+          </h2>
+          <p className={`text-xs mt-1 ${muted}`}>{getLocalTime(data.timezone)}</p>
+        </div>
+
+        {/* Icon + temperature side by side on larger screens */}
+        <div className="flex items-center justify-center gap-2">
+          <img
+            src={iconUrl}
+            alt={data.weather[0].description}
+            className="w-28 h-28 drop-shadow-2xl animate-float"
+          />
+          <div className="text-left">
+            <p
+              className={`font-semibold leading-none tracking-tighter ${text}`}
+              style={{ fontSize: 'clamp(4rem, 15vw, 6rem)' }}
+            >
+              {toDisplay(data.main.temp)}
+              <span className={`text-4xl font-light ml-1 relative -top-4 ${sub}`}>°{unit}</span>
+            </p>
+            <p className={`text-sm capitalize italic mt-1 ${sub}`}>
+              {data.weather[0].description}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <p className="text-6xl font-extrabold mb-2">{displayTemp}°{unit}</p>
-      
-      <p className="text-xl capitalize italic opacity-90 mb-4">
-        {data.weather[0].description}
-      </p>
+      {/* Divider */}
+      <div
+        className="mb-5"
+        style={{
+          height: '1px',
+          background: isSnow
+            ? 'rgba(0,0,0,0.08)'
+            : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)'
+        }}
+      />
 
-      {/* --- GRID 4 KOTAK YANG BARU --- */}
-      <div className="grid grid-cols-2 gap-y-6 gap-x-4 mt-6 pt-6 border-t border-white/20 relative z-10">
-        
-        {/* Kotak 1: Kelembapan */}
-        <div>
-          <p className="text-sm opacity-75 text-blue-100 mb-1">Kelembapan</p>
-          <p className="font-semibold text-lg flex justify-center items-center gap-1">
-            💧 {data.main.humidity}%
-          </p>
-        </div>
-        
-        {/* Kotak 2: Angin */}
-        <div>
-          <p className="text-sm opacity-75 text-blue-100 mb-1">Angin</p>
-          <p className="font-semibold text-lg flex justify-center items-center gap-1">
-            💨 {data.wind.speed} m/s
-          </p>
-        </div>
-
-        {/* Kotak 3: Terasa Seperti */}
-        <div>
-          <p className="text-sm opacity-75 text-blue-100 mb-1">Terasa Seperti</p>
-          <p className="font-semibold text-lg flex justify-center items-center gap-1">
-            🌡️ {feelsLikeTemp}°{unit}
-          </p>
-        </div>
-
-        {/* Kotak 4: Matahari Terbenam */}
-        <div>
-          <p className="text-sm opacity-75 text-blue-100 mb-1">Matahari Terbenam</p>
-          <p className="font-semibold text-lg flex justify-center items-center gap-1">
-            🌇 {getSunsetTime(data.sys.sunset, data.timezone)}
-          </p>
-        </div>
-
+      {/* Stat pills grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-200 ${pillBg}`}
+            style={{ backdropFilter: 'blur(8px)' }}
+          >
+            <span className="text-xl leading-none">{s.icon}</span>
+            <div>
+              <p className={`text-[10px] uppercase tracking-widest font-semibold ${muted}`}>{s.label}</p>
+              <p className={`text-sm font-bold mt-0.5 ${text}`}>{s.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
